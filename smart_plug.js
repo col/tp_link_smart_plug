@@ -13,24 +13,43 @@ function SmartPlug(host, port) {
     });
 }
 
-SmartPlug.prototype.alias = function() {
-  var defer = $q.defer();
+SmartPlug.prototype.alias = function(callback) {
   this.sendRequest("system", "get_sysinfo", {}, (data) => {
-    defer.resolve(data["alias"]);
+    callback(data["alias"]);
   });
-  return defer.promise;
 };
 
-SmartPlug.prototype.sendRequest = function(target, command, args = {}, callback) {
+SmartPlug.prototype.relayState = function(callback) {
+  this.sendRequest("system", "get_sysinfo", {}, (data) => {
+    callback(data["relay_state"]);
+  });
+};
+
+SmartPlug.prototype.setRelayState = function(state) {
+  this.sendRequest("system", "set_relay_state", {"state": state}, null);
+};
+
+SmartPlug.prototype.turnOn = function() {
+  this.setRelayState(1);
+};
+
+SmartPlug.prototype.turnOff = function() {
+  this.setRelayState(0);
+};
+
+SmartPlug.prototype.sendRequest = function(target, command, args = {}, callback = null) {
   var request = {};
   request[target] = {};
   request[target][command] = args;
   this.socket.write(TPLinkProtocol.encrypt(JSON.stringify(request)), 'utf8', () => {
-    this.socket.on('data', (data) => {
-      var response = JSON.parse(TPLinkProtocol.decrypt(data));
-      var data = response[target][command];
-      callback(data);
-    });
+    if (callback) {
+      this.socket.on('data', (data) => {
+        this.socket.removeAllListeners('data');
+        var response = JSON.parse(TPLinkProtocol.decrypt(data));
+        var data = response[target][command];
+        callback(data);
+      });
+    }
   });
 };
 
