@@ -22,20 +22,27 @@ describe('SmartPlug', () => {
 
   describe('#alias', () => {
 
-    var mockSocket = new MockSocket();
+    var mockSocket;
 
     beforeEach(() => {
-        sinon.stub(net, 'Socket', function() {
-          return mockSocket;
-        });
+      mockSocket = new MockSocket();
+      sinon.stub(net, 'Socket', function() {
+        return mockSocket;
+      });
+    });
+
+    afterEach(() => {
+      sinon.restore(net.Socket)
     });
 
     it('should return the alias of the device', (done) => {
       var device = new SmartPlug("127.0.0.1", 9999);
+
       device.alias().then((alias) => {
           expect(alias).toBe("Mock Device");
           done();
       });
+
       var response = {"system":{"get_sysinfo":{"alias": "Mock Device"}}};
       mockSocket.emit('data', TPLinkProtocol.encrypt(JSON.stringify(response)));
     });
