@@ -1,7 +1,6 @@
 'use strict';
 
 var net = require('net');
-var $q = require('q');
 const TPLinkProtocol = require('./tp_link_protocol');
 
 function SmartPlug(host, port) {
