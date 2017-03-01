@@ -2,8 +2,8 @@ const nock = require('nock');
 const util = require('util');
 const sinon = require('sinon');
 const net = require('net');
-const SmartPlug = require('../smart_plug');
 const EventEmitter = require('events').EventEmitter;
+const SmartPlug = require('../smart_plug');
 const TPLinkProtocol = require('../tp_link_protocol');
 
 function MockSocket() {
