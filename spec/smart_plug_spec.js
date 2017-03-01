@@ -15,7 +15,6 @@ function MockSocket() {
     callback();
   };
 }
-
 util.inherits(MockSocket, EventEmitter);
 
 describe('SmartPlug', () => {
@@ -32,7 +31,7 @@ describe('SmartPlug', () => {
     });
 
     afterEach(() => {
-      sinon.restore(net.Socket)
+      sinon.restore(net.Socket);
     });
 
     it('should return the alias of the device', (done) => {

@@ -15,15 +15,23 @@ function SmartPlug(host, port) {
 
 SmartPlug.prototype.alias = function() {
   var defer = $q.defer();
-  let request = {"system": {"get_sysinfo": {}}};
+  this.sendRequest("system", "get_sysinfo", {}, (data) => {
+    defer.resolve(data["alias"]);
+  });
+  return defer.promise;
+};
+
+SmartPlug.prototype.sendRequest = function(target, command, args = {}, callback) {
+  var request = {};
+  request[target] = {};
+  request[target][command] = args;
   this.socket.write(TPLinkProtocol.encrypt(JSON.stringify(request)), 'utf8', () => {
     this.socket.on('data', (data) => {
       var response = JSON.parse(TPLinkProtocol.decrypt(data));
-      var alias = response["system"]["get_sysinfo"]["alias"];
-      defer.resolve(alias);
+      var data = response[target][command];
+      callback(data);
     });
   });
-  return defer.promise;
 };
 
 module.exports = SmartPlug;
