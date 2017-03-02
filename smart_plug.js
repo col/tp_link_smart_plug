@@ -6,50 +6,70 @@ const TPLinkProtocol = require('./tp_link_protocol');
 function SmartPlug(host, port) {
     this.host = host;
     this.port = port;
+    this.alias = undefined;
+    this.relayState = undefined;
     this.socket = new net.Socket();
-    this.socket.connect(port, host, () => {
-	    console.log('Connected');
-    });
 }
 
-SmartPlug.prototype.alias = function(callback) {
-  this.sendRequest("system", "get_sysinfo", {}, (data) => {
-    callback(data["alias"]);
+SmartPlug.prototype.disconnect = function() {
+  this.socket.destroy();
+};
+
+SmartPlug.prototype.update = function(callback) {
+  this.fetchSysInfo((data) => {
+    this.alias = data["alias"];
+    this.relayState = data["relay_state"];
+    callback();
   });
 };
 
-SmartPlug.prototype.relayState = function(callback) {
+SmartPlug.prototype.fetchSysInfo = function(callback) {
   this.sendRequest("system", "get_sysinfo", {}, (data) => {
-    callback(data["relay_state"]);
+    callback(data);
   });
 };
 
-SmartPlug.prototype.setRelayState = function(state) {
-  this.sendRequest("system", "set_relay_state", {"state": state}, null);
+SmartPlug.prototype.setRelayState = function(state, callback) {
+  this.sendRequest("system", "set_relay_state", {"state": state ? 1 : 0}, null);
+  setTimeout(() => {
+    this.update(() => {
+      if (callback) {
+        callback();
+      }
+    });
+  }, 100);
 };
 
-SmartPlug.prototype.turnOn = function() {
-  this.setRelayState(1);
+SmartPlug.prototype.turnOn = function(callback) {
+  this.setRelayState(1, callback);
 };
 
-SmartPlug.prototype.turnOff = function() {
-  this.setRelayState(0);
+SmartPlug.prototype.turnOff = function(callback) {
+  this.setRelayState(0, callback);
 };
 
 SmartPlug.prototype.sendRequest = function(target, command, args = {}, callback = null) {
+  this.socket.connect(this.port, this.host);
   var request = {};
   request[target] = {};
   request[target][command] = args;
   this.socket.write(TPLinkProtocol.encrypt(JSON.stringify(request)), 'utf8', () => {
-    if (callback) {
-      this.socket.on('data', (data) => {
-        this.socket.removeAllListeners('data');
-        var response = JSON.parse(TPLinkProtocol.decrypt(data));
-        var data = response[target][command];
-        callback(data);
-      });
-    }
+      this.listenForResponse(target, command, callback);
   });
 };
+
+SmartPlug.prototype.listenForResponse = function(target, command, callback) {
+  if (!callback) {
+    this.socket.destroy();
+    return
+  }
+  this.socket.on('data', (data) => {
+    this.socket.removeAllListeners('data');
+    this.socket.destroy();
+    var response = JSON.parse(TPLinkProtocol.decrypt(data));
+    var data = response[target][command];
+    callback(data);
+  });
+}
 
 module.exports = SmartPlug;

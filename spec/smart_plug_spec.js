@@ -11,6 +11,7 @@ function MockSocket() {
   this.write = function(msg, encoding, callback) {
     callback();
   };
+  this.destroy = function() {};
 }
 util.inherits(MockSocket, EventEmitter);
 
@@ -29,29 +30,31 @@ describe('SmartPlug', () => {
     sinon.restore(net.Socket);
   });
 
-  describe('#alias', () => {
+  describe('#fetchSysInfo', () => {
 
-    it('should return the alias of the device', (done) => {
-      device.alias((alias) => {
-        expect(alias).toBe("Mock Device");
+    it('should return the sys info of the device', (done) => {
+      device.fetchSysInfo((sysInfo) => {
+        expect(sysInfo["alias"]).toBe("Mock Device");
+        expect(sysInfo["relay_state"]).toBe(1);
         done();
       });
 
-      var response = {"system":{"get_sysinfo":{"alias": "Mock Device"}}};
+      var response = {"system":{"get_sysinfo":{"alias": "Mock Device", "relay_state": 1}}};
       mockSocket.emit('data', TPLinkProtocol.encrypt(JSON.stringify(response)));
     });
 
   });
 
-  describe('#getRelayState', () => {
+  describe('#update', () => {
 
-    it('should return the relay state of the device', (done) => {
-      device.relayState((state) => {
-        expect(state).toBe(1);
+    it('should update the alias and relay_state properties', (done) => {
+      device.update(() => {
+        expect(device.alias).toBe("New Alias");
+        expect(device.relayState).toBe(0);
         done();
       });
 
-      var response = {"system":{"get_sysinfo":{"relay_state": 1}}};
+      var response = {"system":{"get_sysinfo":{"alias": "New Alias", "relay_state": 0}}};
       mockSocket.emit('data', TPLinkProtocol.encrypt(JSON.stringify(response)));
     });
 
@@ -70,7 +73,7 @@ describe('SmartPlug', () => {
   describe('#turnOn', () => {
 
     it('should send setRelayState(1) command to the device', () => {
-      var sendRequestSpy = sinon.spy(device, 'sendRequest');
+      var sendRequestSpy = sinon.stub(device, 'sendRequest');
       device.turnOn();
       sinon.assert.calledWith(sendRequestSpy, "system", "set_relay_state", {"state": 1});
     });
