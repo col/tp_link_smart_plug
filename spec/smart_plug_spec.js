@@ -7,11 +7,13 @@ const SmartPlug = require('../smart_plug');
 const TPLinkProtocol = require('../tp_link_protocol');
 
 function MockSocket() {
-  this.connect = function(port, host, callback) {};
+  this.connect = function(port, host, callback) {
+    callback();
+  };
   this.write = function(msg, encoding, callback) {
     callback();
   };
-  this.destroy = function() {};
+  this.end = function() {};
 }
 util.inherits(MockSocket, EventEmitter);
 
@@ -63,9 +65,9 @@ describe('SmartPlug', () => {
   describe('#setRelayState', () => {
 
     it('should send set_relay_state command to the device', () => {
-      var sendRequestSpy = sinon.spy(device, 'sendRequest');
+      var sendCommandSpy = sinon.spy(device, 'sendCommand');
       device.setRelayState(1);
-      sinon.assert.calledWith(sendRequestSpy, "system", "set_relay_state", {"state": 1});
+      sinon.assert.calledWith(sendCommandSpy, "system", "set_relay_state", {"state": 1});
     });
 
   });
@@ -73,9 +75,9 @@ describe('SmartPlug', () => {
   describe('#turnOn', () => {
 
     it('should send setRelayState(1) command to the device', () => {
-      var sendRequestSpy = sinon.stub(device, 'sendRequest');
+      var sendCommandSpy = sinon.stub(device, 'sendCommand');
       device.turnOn();
-      sinon.assert.calledWith(sendRequestSpy, "system", "set_relay_state", {"state": 1});
+      sinon.assert.calledWith(sendCommandSpy, "system", "set_relay_state", {"state": 1});
     });
 
   });
@@ -83,9 +85,9 @@ describe('SmartPlug', () => {
   describe('#turnOff', () => {
 
     it('should send setRelayState(0) command to the device', () => {
-      var sendRequestSpy = sinon.spy(device, 'sendRequest');
+      var sendCommandSpy = sinon.spy(device, 'sendCommand');
       device.turnOff();
-      sinon.assert.calledWith(sendRequestSpy, "system", "set_relay_state", {"state": 0});
+      sinon.assert.calledWith(sendCommandSpy, "system", "set_relay_state", {"state": 0});
     });
 
   });

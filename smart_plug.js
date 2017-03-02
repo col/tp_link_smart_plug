@@ -30,14 +30,15 @@ SmartPlug.prototype.fetchSysInfo = function(callback) {
 };
 
 SmartPlug.prototype.setRelayState = function(state, callback) {
-  this.sendRequest("system", "set_relay_state", {"state": state ? 1 : 0}, null);
-  setTimeout(() => {
-    this.update(() => {
-      if (callback) {
-        callback();
-      }
-    });
-  }, 500);
+  this.sendCommand("system", "set_relay_state", {"state": state ? 1 : 0}, _ => {
+    setTimeout(() => {
+      this.update(() => {
+        if (callback) {
+          callback();
+        }
+      });
+    }, 500);
+  });
 };
 
 SmartPlug.prototype.turnOn = function(callback) {
@@ -48,24 +49,36 @@ SmartPlug.prototype.turnOff = function(callback) {
   this.setRelayState(0, callback);
 };
 
-SmartPlug.prototype.sendRequest = function(target, command, args = {}, callback = null) {
-  this.socket.connect(this.port, this.host);
+function createRequest(target, command, args) {
   var request = {};
   request[target] = {};
   request[target][command] = args;
-  this.socket.write(TPLinkProtocol.encrypt(JSON.stringify(request)), 'utf8', () => {
-      this.listenForResponse(target, command, callback);
+  return request;
+}
+
+SmartPlug.prototype.sendCommand = function(target, command, args = {}, callback) {
+  this.socket.connect(this.port, this.host, _ => {
+    var request = createRequest(target, command, args);
+    this.socket.end(TPLinkProtocol.encrypt(JSON.stringify(request)));
+    if (callback) {
+      callback();
+    }
+  });
+};
+
+SmartPlug.prototype.sendRequest = function(target, command, args = {}, callback) {
+  this.socket.connect(this.port, this.host, _ => {
+    var request = createRequest(target, command, args);
+    this.socket.write(TPLinkProtocol.encrypt(JSON.stringify(request)), 'utf8', () => {
+        this.listenForResponse(target, command, callback);
+    });
   });
 };
 
 SmartPlug.prototype.listenForResponse = function(target, command, callback) {
-  if (!callback) {
-    this.socket.destroy();
-    return
-  }
   this.socket.on('data', (data) => {
     this.socket.removeAllListeners('data');
-    this.socket.destroy();
+    this.socket.end();
     var response = JSON.parse(TPLinkProtocol.decrypt(data));
     var data = response[target][command];
     callback(data);
