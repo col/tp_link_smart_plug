@@ -37,7 +37,7 @@ SmartPlug.prototype.setRelayState = function(state, callback) {
         callback();
       }
     });
-  }, 100);
+  }, 500);
 };
 
 SmartPlug.prototype.turnOn = function(callback) {
