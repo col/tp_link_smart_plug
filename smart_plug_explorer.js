@@ -3,9 +3,10 @@
 var dgram = require('dgram');
 const TPLinkProtocol = require('./tp_link_protocol');
 
-function SmartPlugExplorer(host = "255.255.255.255", port = 9999, timeout = 5000) {
+function SmartPlugExplorer(host = "255.255.255.255", port = 9999, timeout = 5000, listenPort = null) {
   this.host = host;
   this.port = port;
+  this.listenPort = listenPort;
   this.timeout = timeout;
   this.devices = [];
 
@@ -36,7 +37,7 @@ function SmartPlugExplorer(host = "255.255.255.255", port = 9999, timeout = 5000
 SmartPlugExplorer.prototype.findDevices = function(callback) {
   this.devices = [];
 
-  this.client.bind(() => {
+  this.client.bind({port: this.listenPort}, () => {
       this.client.setBroadcast(true);
 
       console.log(`Sending device discovery broadcast to ${this.host}:${this.port}`);
