@@ -4,9 +4,7 @@ const INITIALIZATION_VECTOR = 171;
 
 module.exports = {
 
-  encrypt: function(content, includeLength) {
-    includeLength = (typeof includeLength !== 'undefined') ?  includeLength : true;
-
+  encrypt: function(content, includeLength = true) {    
     var encrypted = new Buffer(includeLength ? 4+content.length : content.length);
     if (includeLength) {
       encrypted.writeUInt32BE(content.length, 0);
@@ -21,9 +19,7 @@ module.exports = {
     return encrypted;
   },
 
-  decrypt: function(buffer, includesLength) {
-    includesLength = (typeof includesLength !== 'undefined') ?  includesLength : true;
-
+  decrypt: function(buffer, includesLength = true) {
     var content = includesLength ? buffer.slice(4, buffer.length) : buffer;
     var decrypted = new Buffer(content.length);
     var key = INITIALIZATION_VECTOR;
