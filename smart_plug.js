@@ -3,7 +3,7 @@
 var net = require('net');
 const TPLinkProtocol = require('./tp_link_protocol');
 
-function SmartPlug(host, port) {
+function SmartPlug(host, port = 9999) {
     this.host = host;
     this.port = port;
     this.alias = undefined;
@@ -47,6 +47,12 @@ SmartPlug.prototype.turnOn = function(callback) {
 
 SmartPlug.prototype.turnOff = function(callback) {
   this.setRelayState(0, callback);
+};
+
+SmartPlug.prototype.setWifiInfo = function(ssid, password, keyType = 3, callback) {
+  this.sendCommand("netif", "set_stainfo", {"ssid": ssid, "password": password, "key_type": keyType}, _ => {
+    callback();
+  });
 };
 
 function createRequest(target, command, args) {
