@@ -41,7 +41,7 @@ SmartPlugExplorer.prototype.findDevices = function(callback) {
       this.client.setBroadcast(true);
 
       console.log(`Sending device discovery broadcast to ${this.host}:${this.port}`);
-      var request = TPLinkProtocol.encrypt(JSON.stringify({"system": {"get_sysinfo": {}}}, false));
+      var request = TPLinkProtocol.encrypt(JSON.stringify({"emeter": {"get_realtime": null}, "system": {"get_sysinfo": null}}), false);
       this.client.send(request, 0, request.length, this.port, this.host);
 
       setTimeout(_ => {
